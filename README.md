@@ -1,10 +1,10 @@
-# 💌 Wedding Letter
+# Vowory
 
 > 로고를 클릭하면 서비스 페이지로 이동합니다.
 
 <p align="center">
   <a href="https://vowory.com">
-    <img src="./frontend/public/logo.png" width="180" alt="Wedding Letter logo" />
+    <img src="./frontend/public/logo.png" width="180" alt="Vowory logo" />
   </a>
 </p>
 
@@ -17,110 +17,69 @@
   <img src="https://img.shields.io/badge/Redis-7.x-DC382D?logo=redis&logoColor=white" alt="Redis" />
 </p>
 
-**Wedding Letter**는 [`https://vowory.com`](https://vowory.com) 에서 운영 중인 모바일 청첩장 제작 서비스입니다.
+**Vowory**는 [`https://vowory.com`](https://vowory.com) 에서 운영 중인 모바일 청첩장 제작 서비스입니다.
 
 - 예비부부가 직접 청첩장을 생성하고 수정하고 발행할 수 있습니다.
+- RSVP, 방명록, 방문 통계, 감사장, 공지 기능이 있습니다..
 - 하객은 모바일 환경에서 예식 정보, 갤러리, 지도, 계좌, 교통 정보를 한 번에 확인할 수 있습니다.
-- RSVP, 방명록, 방문 통계, 감사장, 공지 기능까지 포함한 운영형 웨딩 플랫폼입니다.
 
-## Preview
+## Structure
+
+<p align="center">
+  <img src="./info/archi.png" width="960" alt="Vowory system architecture" />
+</p>
+
+1. 사용자 요청은 Cloudflare를 거쳐 AWS EC2에 들어오고, EC2 내부의 Nginx가 Next.js와 Spring Boot로 요청을 분기합니다.
+2. Next.js는 사용자 화면을 담당하고, Spring Boot는 인증, 청첩장/감사장, RSVP, 방명록, 공지 API를 처리합니다. 로그인은 Google / Kakao OAuth2와 JWT 쿠키 기반으로 동작합니다.
+3. 핵심 데이터는 MariaDB에 저장하고, 이미지와 파일 자산은 Cloudflare R2에 저장합니다. 배포는 GitHub Actions 기반 CI/CD로 EC2에 반영합니다.
+
+## ERD
+
+<p align="center">
+  <img src="./info/erd.png" width="1100" alt="Vowory ERD" />
+</p>
+
+1. `app_user`, `plan`, `user_subscription`, `user_usage`는 사용자, 구독 플랜, 월별 사용량을 관리합니다. 구독 정보와 사용량을 분리해 플랜 정책과 제한 계산을 단순하게 유지했습니다.
+2. `invitation`은 편집 중인 청첩장 초안이고, `invitation_publication`은 실제 공개 중인 발행본입니다. 초안과 공개본을 분리해 편집 중 변경이 바로 노출되지 않도록 했습니다.
+3. `rsvp`, `guestbook`, `invitation_visit_daily`는 청첩장에 연결되는 공개 반응 데이터입니다. 방문 수는 일별 집계 테이블로 관리해 통계 조회를 단순하게 만들었습니다.
+4. `thankyou_card`는 감사장 전용 도메인이고, `file_asset`은 청첩장/감사장에서 공통으로 사용하는 업로드 파일 메타데이터입니다. 파일은 소유 타입과 상태값으로 관리해 공통 처리와 삭제 예약이 가능하도록 구성했습니다.
+5. `notice`는 운영 공지, `company_profile`은 공통 브랜딩과 기본 테마 설정을 담당합니다. ERD 이미지의 보조 테이블까지 포함하면 전체 스키마를 볼 수 있지만, 실제 핵심 흐름은 위 도메인들을 중심으로 돌아갑니다.
+
+
+## 기술스택
+
+### Frontend
+
+- Next.js
+- React
+- TypeScript
+
+### Backend
+
+- Spring Boot
+- Kotlin
+- Spring Security
+- Spring Data JPA
+- Querydsl
+
+### Data / Infra
+
+- MariaDB
+- Redis
+- AWS EC2
+- Cloudflare R2
+- Cloudflare DNS / CDN
+
+## 샘플
 
 | Sample 1 | Sample 2 | Sample 3 |
 | --- | --- | --- |
 | ![sample-1](./frontend/public/sample/1.png) | ![sample-2](./frontend/public/sample/2.png) | ![sample-3](./frontend/public/sample/3.png) |
 
-| Sample 4 | Sample 5 | Landing |
-| --- | --- | --- |
-| ![sample-4](./frontend/public/sample/4.png) | ![sample-5](./frontend/public/sample/5.png) | ![landing](./frontend/public/img.jpg) |
-
-## Project Architecture
-
-```mermaid
-flowchart LR
-    User[Guest / Couple] --> Front[Next.js Frontend]
-    Front --> Api[Spring Boot API]
-    Api --> DB[(MariaDB)]
-    Api --> Cache[(Redis)]
-    Api --> Storage[(S3 Compatible Storage)]
-    Api --> OAuth[Google / Kakao OAuth]
-    Front --> Kakao[Kakao Maps / Share]
-    Api --> Mail[Mail Service]
-```
-
-- `Frontend`는 랜딩 페이지, 청첩장 에디터, 공개 청첩장, 마이페이지, 감사장 화면을 제공합니다.
-- `API`는 인증, 청첩장/감사장 발행, RSVP, 방명록, 공지, 관리자 기능을 담당합니다.
-- `MariaDB`는 핵심 서비스 데이터를 저장하고, `Redis`는 보조 데이터 저장소로 사용됩니다.
-- 이미지 및 미디어 자산은 S3 호환 스토리지에 저장합니다.
-
-## 3-Layered Architecture
-
-```mermaid
-flowchart TD
-    Controller[Controller Layer] --> Service[Service Layer]
-    Service --> Repository[Repository Layer]
-    Repository --> Domain[Domain Model]
-```
-
-- `Controller`
-  API 엔드포인트, 인증 검사, 요청/응답 처리
-- `Service`
-  청첩장 발행, RSVP/방명록 관리, 감사장 생성, 관리자 기능 등 비즈니스 로직
-- `Repository / Domain`
-  JPA 엔티티, Querydsl 조회, 영속성 처리
-
-## API Domains
-
-| Domain | Endpoint Prefix | Description |
-| --- | --- | --- |
-| Auth | `/api/auth` | 로그인 상태 조회, 로그아웃 |
-| Public Invitation | `/api/public/invitations` | 공개 청첩장 조회, RSVP, 방명록, 방문 기록 |
-| Invitation Owner | `/api/invitations` | 청첩장 생성, 수정, 발행, 대시보드, CSV 다운로드 |
-| Public Thankyou | `/api/public/thankyou-cards` | 공개 감사장 조회 |
-| Thankyou Owner | `/api/thankyou-cards` | 감사장 생성, 수정, 발행 |
-| Public Notice | `/api/public/notices` | 공지 목록, 배너, 상세 조회 |
-| Admin | `/api/admin/users`, `/api/admin/notices` | 사용자 관리, 공지 관리 |
-
-## Tech Stack
-
-### Frontend
-
-| Stack | Usage |
+| Sample 4 | Sample 5 |
 | --- | --- |
-| Next.js 16 | App Router 기반 웹 서비스 |
-| React 19 | 에디터, 공개 페이지, 마이페이지 UI |
-| TypeScript | 타입 안정성 확보 |
-| Tailwind CSS 4 | 스타일링 |
+| ![sample-4](./frontend/public/sample/4.png) | ![sample-5](./frontend/public/sample/5.png) | 
 
-### Backend
-
-| Stack | Usage |
-| --- | --- |
-| Spring Boot 3.5.10 | API 서버 |
-| Kotlin 2.3.0 | 백엔드 주요 언어 |
-| Spring Security | 인증 및 권한 처리 |
-| OAuth2 Client | Google / Kakao 소셜 로그인 |
-| Spring Data JPA | 도메인 영속성 |
-| Querydsl | 관리자/목록성 조회 |
-| Flyway | DB 마이그레이션 |
-
-### Data / Infra
-
-| Stack | Usage |
-| --- | --- |
-| MariaDB | 핵심 서비스 데이터 저장 |
-| Redis | 보조 데이터 저장소 |
-| S3 Compatible Storage | 청첩장/감사장 이미지 및 파일 저장 |
-| Actuator | 상태 확인 및 운영 메트릭 |
-| Mail | 운영/알림 메일 처리 |
-
-### External Integration
-
-| Service | Usage |
-| --- | --- |
-| Google OAuth | 사용자 로그인 |
-| Kakao OAuth | 사용자 로그인 |
-| Kakao Maps | 위치 표시 |
-| Kakao Share | 청첩장 공유 |
 
 ## 주요 기능
 
@@ -138,76 +97,3 @@ flowchart TD
 - [x] 관리자 사용자 관리
 - [x] 관리자 공지 관리
 - [x] RSVP CSV 다운로드
-
-## Directory
-
-```text
-vowory/
-├─ build.gradle.kts
-├─ settings.gradle.kts
-├─ src/
-│  └─ main/
-│     ├─ kotlin/
-│     │  └─ com/gh/wedding/
-│     │     ├─ controller/
-│     │     ├─ service/
-│     │     ├─ repository/
-│     │     ├─ domain/
-│     │     └─ security/
-│     └─ resources/
-└─ frontend/
-   ├─ src/
-   │  ├─ app/
-   │  ├─ components/
-   │  └─ lib/
-   └─ public/
-```
-
-## Run Locally
-
-### Backend
-
-```bash
-./gradlew bootRun
-```
-
-- 기본 포트: `10001`
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-`frontend/.env.local`
-
-```env
-NEXT_PUBLIC_SITE_URL=http://localhost:9000
-NEXT_PUBLIC_API_BASE_URL=http://localhost:10001
-WEDDING_API_BASE_URL=http://127.0.0.1:10001
-```
-
-## Environment Notes
-
-실행 전에 아래 설정이 필요합니다.
-
-- MariaDB 연결 정보
-- Redis 연결 정보
-- JWT 시크릿
-- Google / Kakao OAuth 클라이언트 정보
-- S3 호환 스토리지 정보
-- 메일 발송 정보
-
-## Service
-
-- Production: [`https://vowory.com`](https://vowory.com)
-- Frontend local: [`http://localhost:9000`](http://localhost:9000)
-- Backend local: `http://localhost:10001`
-
-## Update
-
-- Project version: `0.0.1-SNAPSHOT`
-- README updated: `2026-03-18`
-- Root repository: `vowory`

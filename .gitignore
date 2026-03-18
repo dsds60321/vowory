@@ -197,6 +197,10 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# backend application config
+/src/main/resources/application*.yml
+/src/main/resources/application*.yaml
+
 # vercel
 .vercel
 

@@ -1,0 +1,38 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:mariadb://localhost:3306/wedding}
+    driver-class-name: org.mariadb.jdbc.Driver
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+
+  flyway:
+    enabled: false
+
+  jpa:
+    database-platform: org.hibernate.dialect.MariaDBDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+app:
+  jwt:
+    cookie-domain: ${APP_JWT_COOKIE_DOMAIN:vowory.com}
+  oauth2:
+    success-redirect-uri: ${APP_OAUTH2_SUCCESS_REDIRECT_URI:https://vowory.com/}
+  frontend:
+    origin: ${APP_FRONTEND_ORIGIN:https://vowory.com}
+  storage:
+    type: s3
+    local-base-path: src/main/resources/static/upload
+    local-public-prefix: /upload
+    s3:
+      region: ${APP_STORAGE_S3_REGION:auto}
+      endpoint: ${APP_STORAGE_S3_ENDPOINT:https://0f4693c11b7338d887edd1da17a9014f.r2.cloudflarestorage.com}
+      bucket: ${APP_STORAGE_S3_BUCKET:gh-static}
+      prefix: ${APP_STORAGE_S3_PREFIX:}
+      public-base-url: ${APP_STORAGE_S3_PUBLIC_BASE_URL:https://pub-fe2fd31f061a47f8a6a8515292365999.r2.dev}

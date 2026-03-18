@@ -1,0 +1,7 @@
+ALTER TABLE rsvp
+    ADD COLUMN IF NOT EXISTS password VARCHAR(120) NOT NULL DEFAULT '',
+    ADD COLUMN IF NOT EXISTS side VARCHAR(10) NOT NULL DEFAULT 'groom';
+
+UPDATE rsvp
+SET side = 'groom'
+WHERE side IS NULL OR TRIM(side) = '';
